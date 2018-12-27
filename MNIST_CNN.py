@@ -1,4 +1,9 @@
-%matplotlib inline
+'''
+#to train model:
+X_train, Y_train, X_test, Y_test = get_mnist()
+nn = CNNModel()
+losses = nn.fit(X_train, Y_train, epochs = 10000, every = 250, batch_size = 2500)
+'''
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
