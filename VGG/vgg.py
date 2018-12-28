@@ -7,6 +7,7 @@ use as:
 vgg = VGGModel(path_content_image = 'data/My.jpg', path_style_image = 'data/Psychedelics.jpg')
 vgg.fit()
 
+vgg model download from http://www.vlfeat.org/matconvnet/models/beta16/
 """
 import imageio
 import os
@@ -14,7 +15,7 @@ import sys
 import numpy as np
 import scipy.io
 import scipy.misc
-import skimage
+import skimage.transform
 import tensorflow as tf
 
 import logging
