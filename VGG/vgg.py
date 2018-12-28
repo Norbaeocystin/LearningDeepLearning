@@ -45,11 +45,11 @@ class VGGModel:
         '''
         image = imageio.imread(path)
         if resize:
-            image = skimage.transform.resize(image, self.content_image[0].shape)
-        image = np.reshape(image, ((1, *image.shape)))
+            image = skimage.transform.resize(image, self.content_image.shape)
+        else:
+            image = np.reshape(image, ((1, *image.shape)))
         image = image - MEAN_VALUES
         return image
-        
 
     def generate_noise_image(self, content_image):
         """
