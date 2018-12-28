@@ -237,7 +237,7 @@ class VGGModel:
                         os.mkdir(output)
                     filename = 'output/%d.png' % (it)
                     self.save_image(filename, mixed_image)
-                if i == epochs - 1 and it % save_every != 0:
+                if it == epochs - 1 and it % save_every != 0:
                     if not os.path.exists(output):
                             os.mkdir(output)
                     filename = 'output/%s.png' % ('Final')
