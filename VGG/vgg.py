@@ -13,9 +13,9 @@ import imageio
 import os
 import sys
 import numpy as np
+from PIL import Image
 import scipy.io
 import scipy.misc
-import skimage.transform
 import tensorflow as tf
 
 import logging
@@ -32,25 +32,36 @@ class VGGModel:
     def __init__(self, path_content_image = 'data/Marilyn_Monroe_in_1952.jpg', path_style_image = 'data/VanGogh-starry_night.jpg', 
                  noise_ratio = 0.6, beta = 5, alpha = 100, vgg_model = 'data/imagenet-vgg-verydeep-19.mat'):
         self.content_image = self.load_image(path_content_image)
-        self.style_image = self.load_image(path_style_image, resize = True)
+        self.shape = self.content_image.shape
+        self.style_image = self.load_style_image(path_style_image, resize = True)
         self.noise_ratio = noise_ratio
         self.alpha = alpha 
         self.beta = beta
         self.vgg_model = vgg_model
         
         
-    def load_image(self, path, resize = False):
+    def load_image(self, path):
         '''
-        load image, add dimension, and if it is style image resizes to content_image
+        load image, add dimension
         '''
         image = imageio.imread(path)
-        if resize:
-            image = skimage.transform.resize(image, self.content_image.shape)
-        else:
-            image = np.reshape(image, ((1, *image.shape)))
+        image = np.reshape(image, ((1, *image.shape)))
         image = image - MEAN_VALUES
         return image
 
+    def load_style_image(self, path):
+        '''
+        '''
+        img = Image.open(path)
+        img = img.resize([self.shape[1], self.shape[2]])
+        name = 'resized.' + path.rsplit('.', 1)[-1]
+        img.save(name)
+        image = imageio.imread(name)
+        image = np.reshape(image, ((1, *image.shape)))
+        image = image - MEAN_VALUES
+        return image
+    
+    
     def generate_noise_image(self, content_image):
         """
         Returns a noise image intermixed with the content image at a certain ratio.
