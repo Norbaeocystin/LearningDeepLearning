@@ -7,7 +7,6 @@ use as:
 vgg = VGGModel(path_content_image = 'data/My.jpg', path_style_image = 'data/Psychedelics.jpg')
 vgg.fit()
 
-vgg model download from http://www.vlfeat.org/matconvnet/models/beta16/
 """
 import imageio
 import os
@@ -16,6 +15,7 @@ import numpy as np
 from PIL import Image
 import scipy.io
 import scipy.misc
+import skimage.transform
 import tensorflow as tf
 
 import logging
@@ -33,22 +33,22 @@ class VGGModel:
                  noise_ratio = 0.6, beta = 5, alpha = 100, vgg_model = 'data/imagenet-vgg-verydeep-19.mat'):
         self.content_image = self.load_image(path_content_image)
         self.shape = self.content_image.shape
-        self.style_image = self.load_style_image(path_style_image, resize = True)
+        self.style_image = self.load_style_image(path_style_image)
         self.noise_ratio = noise_ratio
         self.alpha = alpha 
         self.beta = beta
         self.vgg_model = vgg_model
         
         
-    def load_image(self, path):
+    def load_image(self, path, resize = False):
         '''
-        load image, add dimension
+        load image, add dimension, and if it is style image resizes to content_image
         '''
         image = imageio.imread(path)
         image = np.reshape(image, ((1, *image.shape)))
         image = image - MEAN_VALUES
         return image
-
+    
     def load_style_image(self, path):
         '''
         '''
@@ -60,8 +60,7 @@ class VGGModel:
         image = np.reshape(image, ((1, *image.shape)))
         image = image - MEAN_VALUES
         return image
-    
-    
+
     def generate_noise_image(self, content_image):
         """
         Returns a noise image intermixed with the content image at a certain ratio.
@@ -209,11 +208,12 @@ class VGGModel:
         return loss
 
 
-    def fit(self, output = 'output/', epochs = 5000, save_every = 100):
+    def fit(self, output = 'output/', epochs = 4000, save_every = 100, name = ''):
         '''
         train model and save images generated
         '''
         with tf.Session(config=tf.ConfigProto(log_device_placement = True, device_count = {'GPU': 0})) as sess:
+            self.sess = sess
             # Load the images.
             # Load the model.
             logger.debug('Starting')
@@ -246,10 +246,10 @@ class VGGModel:
                     logger.debug('cost: {}'.format(sess.run(total_loss)))
                     if not os.path.exists(output):
                         os.mkdir(output)
-                    filename = 'output/%d.png' % (it)
+                    filename = 'output/%s_%d.png' % (name,it)
                     self.save_image(filename, mixed_image)
                 if it == epochs - 1 and it % save_every != 0:
                     if not os.path.exists(output):
                             os.mkdir(output)
-                    filename = 'output/%s.png' % ('Final')
+                    filename = 'output/%s_%s.png' % (name, 'Final')
                     self.save_image(filename, mixed_image)
