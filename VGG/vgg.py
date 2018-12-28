@@ -1,4 +1,8 @@
 """
+Code is borrowed from https://github.com/log0/neural-style-painting
+
+Original paper: https://arxiv.org/abs/1508.06576
+
 Implementation of the "A Neural Algorithm of Artistic Style" in Python using
 TensorFlow.
 
