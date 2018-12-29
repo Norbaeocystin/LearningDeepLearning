@@ -5,7 +5,7 @@ TensorFlow.
 use as:
 
 vgg = VGGModel(path_content_image = 'data/My.jpg', path_style_image = 'data/Psychedelics.jpg')
-vgg.fit()
+vgg.fit(epochs = 1000, name = 'LSD')
 
 """
 import imageio
@@ -39,9 +39,9 @@ class VGGModel:
         self.vgg_model = vgg_model
         
         
-    def load_image(self, path, resize = False):
+    def load_image(self, path):
         '''
-        load image, add dimension, and if it is style image resizes to content_image
+        load image, add dimension
         '''
         image = imageio.imread(path)
         image = np.reshape(image, ((1, *image.shape)))
@@ -50,6 +50,7 @@ class VGGModel:
     
     def load_style_image(self, path):
         '''
+        loads style image and resized it to size of content image
         here it is little complicated because of rotation after resizing of image
         '''
         img = Image.open(path)
@@ -214,7 +215,6 @@ class VGGModel:
         train model and save images generated
         '''
         with tf.Session(config=tf.ConfigProto(log_device_placement = True, device_count = {'GPU': 0})) as sess:
-            self.sess = sess
             # Load the images.
             # Load the model.
             logger.debug('Starting')
