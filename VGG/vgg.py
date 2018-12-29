@@ -1,8 +1,4 @@
 """
-Code is borrowed from https://github.com/log0/neural-style-painting
-
-Original paper: https://arxiv.org/abs/1508.06576
-
 Implementation of the "A Neural Algorithm of Artistic Style" in Python using
 TensorFlow.
 
@@ -36,7 +32,6 @@ class VGGModel:
     def __init__(self, path_content_image = 'data/Marilyn_Monroe_in_1952.jpg', path_style_image = 'data/VanGogh-starry_night.jpg', 
                  noise_ratio = 0.6, beta = 5, alpha = 100, vgg_model = 'data/imagenet-vgg-verydeep-19.mat'):
         self.content_image = self.load_image(path_content_image)
-        self.shape = self.content_image.shape
         self.style_image = self.load_style_image(path_style_image)
         self.noise_ratio = noise_ratio
         self.alpha = alpha 
@@ -55,15 +50,17 @@ class VGGModel:
     
     def load_style_image(self, path):
         '''
+        here it is little complicated because of rotation after resizing of image
         '''
         img = Image.open(path)
-        img = img.resize([self.shape[1], self.shape[2]])
-        name = 'resized.' + path.rsplit('.', 1)[-1]
-        img.save(name)
-        image = imageio.imread(name)
-        image = np.reshape(image, ((1, *image.shape)))
-        image = image - MEAN_VALUES
-        return image
+        _, h, w, _ = self.content_image.shape
+        img = img.resize([h, w])
+        image  = np.asarray(img)
+        if image.shape != self.content_image.shape[1:]:
+            # maybe only np.transpose(image,[1,0,2]) is enough
+            image = np.transpose(np.transpose(image, (2, 0, 1)))
+        image = image.reshape((self.content_image.shape))
+        return image - MEAN_VALUES
 
     def generate_noise_image(self, content_image):
         """
@@ -242,10 +239,10 @@ class VGGModel:
             logger.debug('Iterating started')
             for it in range(epochs):
                 sess.run(train_step)
-                logger.debug('Epoch {}'.format(it))
                 if it % save_every == 0:
                     # Print every 100 iteration.
                     mixed_image = sess.run(model['input'])
+                    logger.debug('Epoch: {}'.format(it))
                     logger.debug('sum : {}'.format(sess.run(tf.reduce_sum(mixed_image))))
                     logger.debug('cost: {}'.format(sess.run(total_loss)))
                     if not os.path.exists(output):
