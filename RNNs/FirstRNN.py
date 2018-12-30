@@ -84,7 +84,8 @@ class RNNModel:
         self.R_squared = tf.subtract(1., tf.div(self.unexplained_error, self.total_error))
         #init and session
         self.init = tf.global_variables_initializer()
-        self.sess = tf.Session()
+        self.config = tf.ConfigProto(device_count = {'GPU': 0})
+        self.sess = tf.Session(config = self.config)
         #saver
         self.saver = tf.train.Saver()
         #tensorboard stuff
@@ -133,7 +134,7 @@ class RNNModel:
     
     def generate(self,X, length = 100):
         '''
-        will generate array with length by adding last element from
+        will generate array with length by adding second element from prediction to input X
         
         X needs to be in shape [1,self.sequence_length, self.n_outputs]
         
@@ -148,7 +149,21 @@ class RNNModel:
             ind = sequence.shape[1] - self.sequence_length
             sequence_to_feed = np.array_split(sequence, [ind],axis = 1)[-1]
             Y_hat = self.sess.run(self.Y_hat, feed_dict = {self.X: sequence_to_feed})
-            sequence = np.concatenate((sequence, Y_hat[0][-1].reshape(1,1,1)), axis = 1)
+            sequence = np.concatenate((sequence, Y_hat[0][self.n_outputs].reshape(1,1,1)), axis = 1)
+        return sequence
+    
+    def generate_sequences(self,X, length = 2):
+        '''
+        will concatenate results to input X
+        if sequence length is 20 and length 2 results will be 20 + 2 * 20
+        '''
+        sequence = X
+        for i in range(length):
+            ind = sequence.shape[1] - self.sequence_length
+            sequence_to_feed = np.array_split(sequence, [ind],axis = 1)[-1]
+            Y_hat = self.sess.run(self.Y_hat, feed_dict = {self.X: sequence_to_feed})
+            shortened_Y_hat = np.array_split(Y_hat, [1],axis = 1)[-1]
+            sequence = np.concatenate((sequence, shortened_Y_hat), axis = 1)
         return sequence
     
     def save(self, path):
