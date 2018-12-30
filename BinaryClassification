@@ -1,0 +1,33 @@
+'''
+very short example for binary classification
+'''
+import tensorflow as tf
+import numpy as np
+
+#X, Y
+target = np.array([1,1,0]).reshape(3,1)
+features = np.array([[1,1,1],[1,0.5,0.6],[0.2,0.2,0.0]])
+
+#defining
+X = tf.placeholder(shape = [ None, 3], dtype = 'float')
+Y = tf.placeholder(shape = [None, 1], dtype = 'float')
+prediction = tf.layers.dense(X, 1, activation = tf.sigmoid)
+cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = prediction, labels = Y))
+optimizer = tf.train.AdamOptimizer(0.01).minimize(cost)
+predicted_class = tf.greater(prediction,0.5)
+correct = tf.equal(predicted_class, tf.equal(Y,1.0))
+accuracy = tf.reduce_mean( tf.cast(correct, 'float') )
+config = tf.ConfigProto(allow_soft_placement=True)
+sess = tf.Session(config = config)
+init = tf.global_variables_initializer()
+#running
+sess.run(init)
+for i in range(200):
+    sess.run(optimizer, feed_dict = { X: features, Y: target})
+    if i % 20 == 0:
+        print(sess.run(accuracy, feed_dict = { X: features, Y: target} ))
+        
+#predicting
+sess.run(prediction, feed_dict = { X: features, Y: target})
+# closing session
+sess.close()
