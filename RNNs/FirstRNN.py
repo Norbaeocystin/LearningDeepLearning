@@ -60,7 +60,7 @@ class RNNModel:
     def __init__(self, learning_rate = 0.001, n_inputs = 1, n_outputs = 1, sequence_length = 20, n_neurons = 100):
         #parameters
         self.steps = 0
-        self.sequence_length = 20
+        self.sequence_length = sequence_length
         self.n_inputs = 1
         self.n_neurons = 100
         self.n_outputs = 1
@@ -130,6 +130,26 @@ class RNNModel:
         '''
         Y_hat = self.sess.run(self.Y_hat, feed_dict = {self.X: X})
         return Y_hat
+    
+    def generate(self,X, length = 100):
+        '''
+        will generate array with length by adding last element from
+        
+        X needs to be in shape [1,self.sequence_length, self.n_outputs]
+        
+        it is using predicted values to generate predicted values 
+        
+        args:
+            X: <numpy.array>,
+            length: <int>, how many cycles to do 
+        '''
+        sequence = X
+        for i in range(length):
+            ind = sequence.shape[1] - self.sequence_length
+            sequence_to_feed = np.array_split(sequence, [ind],axis = 1)[-1]
+            Y_hat = self.sess.run(self.Y_hat, feed_dict = {self.X: sequence_to_feed})
+            sequence = np.concatenate((sequence, Y_hat[0][-1].reshape(1,1,1)), axis = 1)
+        return sequence
     
     def save(self, path):
         '''
