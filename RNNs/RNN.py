@@ -242,6 +242,9 @@ class RNNModel:
         tf.reset_default_graph()
         
 class MultiRNNModel(RNNModel):
+	'''
+	Stacked RNN cells
+	'''
     def __init__(self, learning_rate = 0.0001, n_inputs = 1, n_outputs = 1, sequence_length = 20, n_neurons = 100, n_layers = 3):
         #parameters
         self.steps = 0
@@ -306,6 +309,9 @@ class MultiRNNModel(RNNModel):
         return Y
     
 class MultiGRUModel(RNNModel):
+	'''
+	Stacked GRU cells
+	'''
     def __set_RNN_cell_type(self):
         '''
         overwrite return statement of this this function to use GRU or other LSTM cells
