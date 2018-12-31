@@ -242,7 +242,6 @@ class RNNModel:
         tf.reset_default_graph()
         
 class MultiRNNModel(RNNModel):
-    BasicRNNCell = tf.nn.rnn_cell.BasicRNNCell
     def __init__(self, learning_rate = 0.0001, n_inputs = 1, n_outputs = 1, sequence_length = 20, n_neurons = 100, n_layers = 3):
         #parameters
         self.steps = 0
@@ -258,6 +257,7 @@ class MultiRNNModel(RNNModel):
         #Layers
         OutputProjectionWrapper = tf.contrib.rnn.OutputProjectionWrapper
         ReLU = tf.nn.relu
+        self.BasicCell = self.__set_RNN_cell_type()
         '''with tf.variable_scope("rnn1"):
             self.cell = BasicRNNCell (num_units = self.n_neurons, activation = ReLU)
             self.Y_hat_1, states = tf.nn.dynamic_rnn(self.cell, self.X, dtype=tf.float32)
@@ -267,7 +267,7 @@ class MultiRNNModel(RNNModel):
         '''
         self.Y_generated = self.stack_RNNCell(self.n_layers - 1, self.n_neurons, self.X )
         with tf.variable_scope("rnnfinal"):
-            self.cell = OutputProjectionWrapper(BasicRNNCell (num_units = self.n_neurons, activation = ReLU), output_size = self.n_outputs)
+            self.cell = OutputProjectionWrapper(self.BasicCell (num_units = self.n_neurons, activation = ReLU), output_size = self.n_outputs)
             self.Y_hat, states = tf.nn.dynamic_rnn(self.cell, self.Y_generated, dtype=tf.float32)
         #self.cell = OutputProjectionWrapper(self.MultiCell, output_size = self.n_outputs)
         #loss, optimizer, R squared
@@ -288,6 +288,12 @@ class MultiRNNModel(RNNModel):
         self.summary_loss = tf.summary.scalar('MSE', self.loss)
         self.summary_R_squared = tf.summary.scalar('R2', self.R_squared)
         
+    def __set_RNN_cell_type(self):
+        '''
+        overwrite return statement of this this function to use GRU or other LSTM cells
+        '''
+        return tf.nn.rnn_cell.BasicRNNCell
+        
     def stack_RNNCell(self, layers, n_neurons, X):
         '''
         my solution how to stack RNN cells
@@ -295,12 +301,13 @@ class MultiRNNModel(RNNModel):
         Y = X
         for i in range(layers):
             with tf.variable_scope('rnn{}'.format(i)):
-                layer = BasicRNNCell(num_units = self.n_neurons, activation = ReLU)
+                layer = self.BasicCell(num_units = self.n_neurons, activation = ReLU)
                 Y, states = tf.nn.dynamic_rnn(layer, Y, dtype=tf.float32)
         return Y
     
 class MultiGRUModel(RNNModel):
-    '''
-    GRU cell instead of RNN
-    '''
-    BasicRNNCell = tf.nn.rnn_cell.GRUCell
+    def __set_RNN_cell_type(self):
+        '''
+        overwrite return statement of this this function to use GRU or other LSTM cells
+        '''
+        return tf.nn.rnn_cell.GRUCell
