@@ -61,10 +61,11 @@ class RNNModel:
         #parameters
         self.steps = 0
         self.sequence_length = sequence_length
-        self.n_inputs = 1
-        self.n_neurons = 100
-        self.n_outputs = 1
-        self.learning_rate = 0.01
+        self.n_inputs = n_inputs
+        self.n_neurons = n_neurons
+        self.n_outputs = n_outputs
+        self.n_layers = n_layers
+        self.learning_rate = learning_rate
         #placeholders
         self.X = tf.placeholder(tf.float32, [None, self.sequence_length, self.n_inputs])
         self.Y = tf.placeholder(tf.float32, [None, self.sequence_length, self.n_outputs])
@@ -189,3 +190,61 @@ class RNNModel:
         '''
         self.sess.close()
         tf.reset_default_graph()
+        
+class MultiRNNModel(RNNModel):
+    def __init__(self, learning_rate = 0.001, n_inputs = 1, n_outputs = 1, sequence_length = 20, n_neurons = 100, n_layers = 5):
+        #parameters
+        self.steps = 0
+        self.sequence_length = sequence_length
+        self.n_inputs = n_inputs
+        self.n_neurons = n_neurons
+        self.n_outputs = n_outputs
+        self.n_layers = n_layers
+        self.learning_rate = learning_rate
+        #placeholders
+        self.X = tf.placeholder(tf.float32, [None, self.sequence_length, self.n_inputs])
+        self.Y = tf.placeholder(tf.float32, [None, self.sequence_length, self.n_outputs])
+        #Layers
+        OutputProjectionWrapper = tf.contrib.rnn.OutputProjectionWrapper
+        BasicRNNCell = tf.nn.rnn_cell.BasicRNNCell
+        ReLU = tf.nn.relu
+        '''with tf.variable_scope("rnn1"):
+            self.cell = BasicRNNCell (num_units = self.n_neurons, activation = ReLU)
+            self.Y_hat_1, states = tf.nn.dynamic_rnn(self.cell, self.X, dtype=tf.float32)
+        with tf.variable_scope("rnn2"):
+            self.cell = BasicRNNCell (num_units = self.n_neurons, activation = ReLU)
+            self.Y_hat_2, states = tf.nn.dynamic_rnn(self.cell, self.Y_hat_1, dtype=tf.float32)
+        '''
+        self.Y_generated = self.stack_RNNCell(self.n_layers - 1, self.n_neurons, self.X )
+        with tf.variable_scope("rnnfinal"):
+            self.cell = OutputProjectionWrapper(BasicRNNCell (num_units = self.n_neurons, activation = ReLU), output_size = self.n_outputs)
+            self.Y_hat, states = tf.nn.dynamic_rnn(self.cell, self.Y_generated, dtype=tf.float32)
+        #self.cell = OutputProjectionWrapper(self.MultiCell, output_size = self.n_outputs)
+        #loss, optimizer, R squared
+        self.loss = tf.reduce_mean(tf.square(self.Y_hat - self.Y)) # MSE
+        self.optimizer = tf.train.AdamOptimizer(learning_rate = self.learning_rate)
+        self.train_step = self.optimizer.minimize(self.loss)
+        # R squared
+        self.total_error = tf.reduce_sum(tf.square(tf.subtract(self.Y, tf.reduce_mean(self.Y))))
+        self.unexplained_error = tf.reduce_sum(tf.square(self.Y - self.Y_hat))
+        self.R_squared = tf.subtract(1., tf.div(self.unexplained_error, self.total_error))
+        #init and session
+        self.init = tf.global_variables_initializer()
+        self.config = tf.ConfigProto(device_count = {'GPU': 0})
+        self.sess = tf.Session(config = self.config)
+        #saver
+        self.saver = tf.train.Saver()
+        #tensorboard stuff
+        self.summary_loss = tf.summary.scalar('MSE', self.loss)
+        self.summary_R_squared = tf.summary.scalar('R2', self.R_squared)
+        
+    def stack_RNNCell(self, layers, n_neurons, X):
+        '''
+        my solution how to stack RNN cells
+        '''
+        Y = X
+        for i in range(layers):
+            with tf.variable_scope('rnn{}'.format(i)):
+                layer = tf.nn.rnn_cell.BasicRNNCell(num_units = self.n_neurons, activation = ReLU)
+                Y, states = tf.nn.dynamic_rnn(layer, Y, dtype=tf.float32)
+        return Y
