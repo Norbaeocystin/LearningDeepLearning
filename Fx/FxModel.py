@@ -175,7 +175,7 @@ class NNModel:
         self.accuracy_scalar = tf.summary.scalar('accuracy', self.accuracy)
         self.saver = tf.train.Saver()
     
-    def fit(self, X, Y, epochs = 100000,every = 1000, generator = False, log = 'Forex_NN_log'):
+    def fit(self, X, Y, epochs = 100000,every = 1000, generator = False, log = 'Forex_NN_log', init = True):
         '''
         optimizes weights
         args:
@@ -185,8 +185,10 @@ class NNModel:
           every: <int>, how often print message with Epoch and Loss values
           folder: <string>, name of folder where to store data for TensorBoard
           batch_size: <int>, size of features array, size of features sample
+          init: <boolean>, if True will initialize variables if false will not, set init False if after restoring saved model
         '''
-        self.sess.run(self.init_op)
+        if init:
+            self.sess.run(self.init_op)
         logger.debug('Initializing')
         summary_writer = tf.summary.FileWriter(log, self.sess.graph)
         for i in range(epochs):
