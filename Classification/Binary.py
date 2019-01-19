@@ -174,6 +174,9 @@ class NNModel:
                 _, l,a = self.sess.run([self.optimizer, self.cost,self.accuracy], feed_dict = {self.X: x, self.Y: y})
                 if i % every == 0:
                     print('[ {} ] Epoch {} Loss: {:.7f} accuracy {}'.format(time.ctime(), i, l,a)) 
+            _, l,a = self.sess.run([self.optimizer, self.cost,self.accuracy], feed_dict = {self.X: X, self.Y: Y})
+            if i % every == 0:
+                print('[ {} ] Epoch {} Loss: {:.7f} accuracy {}'.format(time.ctime(), i, l,a)) 
                     
     def predict(self, X):
         '''
