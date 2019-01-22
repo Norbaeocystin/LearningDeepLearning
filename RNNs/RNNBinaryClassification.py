@@ -1,5 +1,6 @@
 '''
 few changes to be able to use RNNs to binary classification
+needs to do reshaping targets Y to some form [[0][0][0][0][0] ... [1] or [0]]
 '''
 import matplotlib.pyplot as plt
 import numpy as np
@@ -111,14 +112,17 @@ class RNNModel:
         ReLU = tf.nn.relu
         self.cell = OutputProjectionWrapper(BasicRNNCell (num_units = self.n_neurons, activation = ReLU), output_size = self.n_outputs)
         self.Y_hat, states = tf.nn.dynamic_rnn(self.cell, self.X, dtype=tf.float32)
-        #loss, optimizer, R squared
-        self.loss = tf.reduce_mean(tf.square(self.Y_hat - self.Y)) # MSE
-        self.optimizer = tf.train.AdamOptimizer(learning_rate = self.learning_rate)
-        self.train_step = self.optimizer.minimize(self.loss)
-        # R squared
-        self.total_error = tf.reduce_sum(tf.square(tf.subtract(self.Y, tf.reduce_mean(self.Y))))
-        self.unexplained_error = tf.reduce_sum(tf.square(tf.subtract(self.Y_hat, tf.reduce_mean(self.Y))))
-        self.R_squared = tf.subtract(1., tf.div(self.unexplained_error, self.total_error))
+		'''
+		here are the diferences
+		'''
+		self.Y_hat_reduced = tf.reduce_sum(self.Y_hat, axis = 1)
+		self.Y_reduced = tf.reduce_sum(self.Y, axis = 1)
+        #loss, optimizer, accuracy
+        self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = self.Y_hat_reduced, labels = self.Y_reduced))
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+        self.predicted_class = tf.greater(self.Y_hat_reduced,0.5)
+        self.correct = tf.equal(self.predicted_class, tf.equal(self.Y_reduced,1.0))
+        self.accuracy = tf.reduce_mean( tf.cast(self.correct, 'float') )
         #init and session
         self.init = tf.global_variables_initializer()
         #self.config = tf.ConfigProto(device_count = {'GPU': 0})
@@ -126,8 +130,8 @@ class RNNModel:
         #saver
         self.saver = tf.train.Saver()
         #tensorboard stuff
-        self.summary_loss = tf.summary.scalar('MSE', self.loss)
-        self.summary_R_squared = tf.summary.scalar('R2', self.R_squared)
+        self.summary_loss = tf.summary.scalar('SigmoidCrossEntropy', self.loss)
+        self.summary_accuracy = tf.summary.scalar('Accuracy', self.accuracy)
 
         
     def fit(self, X, Y, epochs = 1000, every = 100, log_path = 'RNNLog', batch_size = 500, init = True ):
@@ -152,12 +156,12 @@ class RNNModel:
             batch = np.random.randint(0, x_length - batch_size, 1)[0]
             x_batch = X[batch:batch + batch_size]
             y_batch = Y[batch:batch + batch_size]
-            _, l, a = self.sess.run([self.train_step, self.loss, self.R_squared], feed_dict = {self.X: x_batch, self.Y: y_batch})
-            loss, r_squared = self.sess.run([self.summary_loss, self.summary_R_squared], feed_dict = {self.X: x_batch, self.Y: y_batch})
+            _, l, a = self.sess.run([self.train_step, self.loss, self.accuracy], feed_dict = {self.X: x_batch, self.Y: y_batch})
+            loss, accuracy = self.sess.run([self.summary_loss, self.summary_accuracy], feed_dict = {self.X: x_batch, self.Y: y_batch})
             summary_writer.add_summary(loss, i)
-            summary_writer.add_summary(r_squared, i)
+            summary_writer.add_summary(accuracy, i)
             if i % every == 0:
-                print('[ {} ] Epoch {} Loss: {:.7f} R squared:{:.3f}'.format(time.ctime(), i, l, a))
+                print('[ {} ] Epoch {} Loss: {:.7f} Accuracy:{:.3f}'.format(time.ctime(), i, l, a))
     
     def predict(self, X):
         '''
