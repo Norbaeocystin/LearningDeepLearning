@@ -1,6 +1,17 @@
 '''
 few changes to be able to use RNNs to binary classification
 needs to do reshaping targets Y to some form [[0][0][0][0][0] ... [1] or [0]]
+
+another option instead of reduce_sum is to use last returned item in sequence this can be done with:
+
+output = tf.transpose(Y_hat, [1, 0, 2])
+last = tf.gather(output, sequence_length - 1)
+
+and to properly shape targets from shape [None, 1]
+zeros = tf.zeros([None, sequence_length - 1])
+added_y = tf.concat([zeros, y], axis = 1)
+
+tf.reshape(added_y, [batch_size, sequence_length, output])
 '''
 import matplotlib.pyplot as plt
 import numpy as np
