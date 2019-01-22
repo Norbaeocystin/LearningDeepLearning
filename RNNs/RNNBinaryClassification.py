@@ -236,6 +236,12 @@ class MultiRNNModel(RNNModel):
 	'''
     def __init__(self, learning_rate = 0.0001, n_inputs = 1, n_outputs = 1, sequence_length = 20, n_neurons = 100, n_layers = 3):
         #parameters
+		'''
+		to reshape targets from binary to sequential something like this can be used
+		tf.zeros([batch_size, self.sequence_length - 1])
+		tf.concat([tf.zeros, self.Y], axis = 1)
+		tf.reshape([batch_size, self.sequence_length -1, self.n_outputs])
+		'''
         self.steps = 0
         self.sequence_length = sequence_length
         self.n_inputs = n_inputs
