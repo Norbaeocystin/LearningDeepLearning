@@ -91,6 +91,20 @@ def get_structured_data(time = 100, limit = 0):
     logger.debug('Your data are prepared')
     return features, labels
 
+def normalize_on_average(X):
+    '''
+    calculate average and return for each row: row - mean
+    return: <numpy.ndarray>, with values between 0 and 1
+    
+    args:
+        X: <numpy.ndarray>, features, labels whatever
+    '''
+    res = []
+    for item in X:
+        item = item - np.mean(item)
+        res.append(item)
+    return np.array(res)
+
 def normalize_maxmin(X):
     '''
     MaxMinNormalizer
