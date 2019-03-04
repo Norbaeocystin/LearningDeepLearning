@@ -12,6 +12,7 @@ Y = np.int32(result[:,1].reshape(-1,1))
 
 tf.reset_default_graph()
 c = TextProcessor(vocabulary_size = len(word2index))
+c.save_metadata(index2word.items())
 pr = c.predict()
 
 ref_word = pr[word2index["One"]]
@@ -68,10 +69,10 @@ class TextProcessor:
         self.sess = tf.Session()
         self.init_op = tf.global_variables_initializer()
         
-    def save_metadata(self, k,v):
+    def save_metadata(self, items):
         with open(os.path.join(self.log_dir, 'metadata.tsv'), "w+") as metadata:
             metadata.write('Name\tClass\n')
-            for k, v in index2word_map.items():
+            for k, v in items:
                 metadata.write('%s\t%d\n' % (v, k))
     
     def fit(self, X,Y, epochs = 5001, every = 500):
