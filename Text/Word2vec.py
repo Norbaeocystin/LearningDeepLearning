@@ -1,4 +1,5 @@
 '''
+heavily inspired by book: Tom Hope, Yehezkel S. Resheff, Itay Lieder-Learning TensorFlow
 Usage:
 
 index2word = {0: "One", 1: "Two", 2: "Three", 3: "Four", 4: "Five", 5: "Six", 6: "Seven", 7: "Eight", 8: "Nine"}
