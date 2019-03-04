@@ -22,6 +22,33 @@ for f in ff:
     print(index2word[f])
     print(cosine_dists[f])
 
+or another example
+
+index2word = {0: "Vegetable", 1: "Potato", 2: "Tomato", 3: "Avocado", 4: "Fruit", 5: "Banana", 6: "Apple", 7: "Pineapple"}
+word2index = {v:k for k, v in index2word.items()}
+
+vegetable = np.random.choice(range(0,4), size = 2000)
+y_vegetable = np.zeros(shape = 2000)
+fruit = np.random.choice(range(4,8), size = 2000)
+y_fruit = np.array([4]*2000)
+X = np.concatenate([vegetable,fruit], axis = 0)
+Y = np.concatenate([y_vegetable, y_fruit], axis = 0)
+X = np.int32(X)
+Y = np.int32(Y).reshape(-1,1)
+
+tf.reset_default_graph()
+c = TextProcessor(vocabulary_size = len(word2index), log_dir = 'Fruit')
+c.fit(X,Y)
+c.save_metadata(index2word.items())
+pr = c.predict()
+ref_word = pr[word2index["Fruit"]]
+
+cosine_dists = np.dot(pr, ref_word)
+ff = np.argsort(cosine_dists)[::-1][1:10]
+for f in ff:
+    print(index2word[f])
+    print(cosine_dists[f])
+
 '''
 
 import os
