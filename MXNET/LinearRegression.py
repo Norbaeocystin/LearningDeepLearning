@@ -1,6 +1,12 @@
 """
 My attempt to implement simple Linear regression, I also tried to implement changing context to gpu but have some troubles ...
 """
+from mxnet import autograd, nd, gluon, init
+from mxnet.gluon import nn
+from mxnet.gluon import loss 
+import mxnet as mx
+import time
+
 
 class LinearRegression():
     
@@ -52,3 +58,38 @@ class LinearRegression():
             nd.shuffle(self.indices, out = self.indices)
             inds = nd.array(self.indices[:self.batch])
             yield self.X.take(inds), self.Y.take(inds)
+
+class LinearRegressionGluon():
+
+    def __init__(self, ctx = mx.cpu(), learning_rate = 0.01):
+        self.learning_rate = learning_rate
+        self.ctx = ctx
+        self.net = nn.Sequential()
+        self.net.add(nn.Dense(1))
+        self.net.initialize(init.Normal(sigma=0.01), ctx = self.ctx)
+        self.loss = loss.L2Loss()
+        self.trainer = gluon.Trainer(self.net.collect_params(), 'sgd', {'learning_rate': self.learning_rate})
+    
+    def fit(self, X, Y, epochs = 100, batch = 100, learning_rate = 0.01, every = 10):
+        features = X.as_in_context(self.ctx)
+        labels = Y.as_in_context(self.ctx)
+        if learning_rate != self.learning_rate:
+            self.learning_rate = learning_rate
+            self.trainer = gluon.Trainer(self.net.collect_params(), 'sgd', {'learning_rate': self.learning_rate})
+        #create iter class for sampling data as batches
+        dataset = gluon.data.ArrayDataset(X,Y)
+        data_iter =  gluon.data.DataLoader(dataset, batch, shuffle = True)
+        for epoch in range(1, epochs + 1):
+            for x, y in data_iter:
+                x = x.as_in_context(self.ctx)
+                y = y.as_in_context(self.ctx)
+                with autograd.record():
+                    l = self.loss(self.net(x), y)
+                l.backward()
+                self.trainer.step(batch)
+            if epoch % every == 0:
+                print('epoch %d, loss: %f' % (epoch, self.loss(self.net(features.as_in_context(self.ctx)), labels.as_in_context(self.ctx)).mean().asnumpy()))
+        
+    def predict(self, x):
+        features = x.as_in_context(self.ctx)
+        return self.net(features)
