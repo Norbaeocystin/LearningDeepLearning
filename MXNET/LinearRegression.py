@@ -60,7 +60,9 @@ class LinearRegression():
             yield self.X.take(inds), self.Y.take(inds)
 
 class LinearRegressionGluon():
-
+    """
+    using Gluon api
+    """
     def __init__(self, ctx = mx.cpu(), learning_rate = 0.01):
         self.learning_rate = learning_rate
         self.ctx = ctx
